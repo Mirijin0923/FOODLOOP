@@ -325,7 +325,7 @@ function FoodCardItem({ card, isOwner, onClaim, onEdit }: { card: FoodListing; i
             <Pressable style={styles.editButton} onPress={onEdit}><Text style={[typography.labelLg, styles.editButtonText]}>Edit</Text></Pressable>
           ) : (
             <Pressable style={[styles.claimButton, claimed && styles.claimButtonDisabled]} onPress={onClaim} disabled={claimed}>
-              <Text style={[typography.labelLg, styles.claimButtonText]}>{claimed ? 'Claimed' : 'Claim Food'}</Text>
+              <Text style={[typography.labelLg, styles.claimButtonText, claimed && styles.claimedButtonText]}>{claimed ? 'Claimed' : 'Claim Food'}</Text>
             </Pressable>
           )}
         </View>
@@ -509,6 +509,7 @@ const styles = StyleSheet.create({
   },
   claimButtonDisabled: { backgroundColor: colors.surfaceContainerHighest },
   claimButtonText: { color: colors.onPrimary },
+  claimedButtonText: { color: colors.onSurface },
   modalOverlay: {
     position: 'absolute',
     top: 0,

@@ -7,10 +7,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { colors, spacing, radius, typography } from '@/constants/foodloop-theme';
 import { useAppState } from '@/context/app-state';
-import { authApi } from '@/services/auth-api';
+
+const LOCAL_VERIFICATION_CODE = '123456';
 
 export default function SignupScreen() {
-  useAppState();
+  const { register } = useAppState();
   const { phone } = useLocalSearchParams<{ phone?: string }>();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -31,12 +32,24 @@ export default function SignupScreen() {
     if (password.length < 8) nextErrors.push('Password must be at least 8 characters.');
     setErrors(nextErrors);
     if (nextErrors.length > 0) return;
-    const channel = phone ? 'sms' : 'email'; const destination = phone ?? email;
     setLoading(true);
     try {
-      if (!codeSent) { await authApi.sendOtp(channel, destination, 'signup'); setCodeSent(true); }
-      else { const { verificationToken } = await authApi.verifyOtp(channel, destination, 'signup', verificationCode); await authApi.signup({ name, email: phone ? undefined : email, phone, password, verificationToken }); setSuccessMessage('Account created successfully. Please log in to continue.'); setTimeout(() => router.replace('/?auth=login'), 1200); }
-    } catch (error) { setErrors([error instanceof Error ? error.message : 'Unable to complete verification.']); }
+      if (!codeSent) {
+        setCodeSent(true);
+      } else {
+        if (verificationCode !== LOCAL_VERIFICATION_CODE) {
+          setErrors(['For local testing, enter verification code 123456.']);
+          return;
+        }
+        const result = register({ name, email: phone ? `${phone}@phone.foodloop` : email, phone, password });
+        if (!result.ok) {
+          setErrors([result.message ?? 'Unable to create your account.']);
+          return;
+        }
+        setSuccessMessage('Account created successfully. Please log in to continue.');
+        setTimeout(() => router.replace('/?auth=login'), 1200);
+      }
+    }
     finally {
       setLoading(false);
     }
@@ -118,7 +131,7 @@ export default function SignupScreen() {
         {!successMessage && codeSent && <>
           <Text style={[typography.labelMd, styles.fieldLabel]}>Verification Code</Text>
           <TextInput value={verificationCode} onChangeText={setVerificationCode} placeholder="6-digit code" placeholderTextColor={colors.secondary} keyboardType="number-pad" maxLength={6} style={[typography.bodyMd, styles.input]} />
-          <Text style={[typography.bodySm, styles.verificationHint]}>Enter the six-digit code sent by {phone ? 'SMS' : 'email'}.</Text>
+          <Text style={[typography.bodySm, styles.verificationHint]}>Demo verification code: {LOCAL_VERIFICATION_CODE}</Text>
         </>}
 
         {!successMessage && <Pressable style={styles.primaryButton} onPress={handleSignup} disabled={loading}>

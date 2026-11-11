@@ -3,12 +3,11 @@ import { Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'reac
 import { router } from 'expo-router';
 import { colors, radius, spacing, typography } from '@/constants/foodloop-theme';
 import { useAppState } from '@/context/app-state';
-import { authApi } from '@/services/auth-api';
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 export default function ForgotPasswordScreen() {
-  useAppState();
+  const { resetPassword } = useAppState();
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,11 +19,12 @@ export default function ForgotPasswordScreen() {
   const handleReset = async () => {
     if (!isValidEmail(email)) return setError('Enter the email address associated with your account.');
     try {
-      if (!codeSent) { await authApi.sendOtp('email', email, 'password-reset'); setError(''); setCodeSent(true); return; }
+      if (!codeSent) { setError(''); setCodeSent(true); return; }
       if (newPassword.length < 8) return setError('Your new password must contain at least 8 characters.');
       if (newPassword !== confirmPassword) return setError('Your new passwords do not match.');
-      const { verificationToken } = await authApi.verifyOtp('email', email, 'password-reset', code);
-      await authApi.resetPassword({ email, password: newPassword, verificationToken });
+      if (!/^\d{6}$/.test(code)) return setError('Enter the six-digit verification code.');
+      const result = resetPassword(email, newPassword);
+      if (!result.ok) return setError(result.message ?? 'Unable to reset your password.');
       setError(''); setComplete(true);
     } catch (requestError) { setError(requestError instanceof Error ? requestError.message : 'Unable to reset your password.'); }
   };

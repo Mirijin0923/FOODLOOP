@@ -121,6 +121,7 @@ function mergeDuplicateConversations(conversations: Conversation[], messages: Re
 }
 
 type AppStateValue = {
+  isLoading: boolean;
   user: User | null;
   isSignedIn: boolean;
   login: (email: string, name?: string) => void;
@@ -157,6 +158,7 @@ type AppStateValue = {
 const AppStateContext = createContext<AppStateValue | null>(null);
 
 export function AppStateProvider({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([
     { name: 'FoodLoop Demo', email: 'demo@foodloop.com', password: 'foodloop123', initials: 'FD' },
@@ -173,6 +175,11 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
   conversationsRef.current = conversations;
   const migratedConversations = useRef(false);
   conversationMessagesRef.current = conversationMessages;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (migratedConversations.current) return;
@@ -431,6 +438,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AppStateValue>(
     () => ({
+      isLoading,
       user,
       isSignedIn: !!user,
       login,
@@ -461,7 +469,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       addReview,
       onCompleted,
     }),
-    [user, login, authenticate, register, resetPassword, findAccountByPhone, findAccountByProvider, loginWithPhone, loginWithProvider, logout, updateProfile, listings, addListing, updateListing, claimListing, expireListings, completeListing, notifyDonor, conversations, conversationMessages, createConversation, sendConversationMessage, receiveConversationMessage, markConversationRead, checkForNewMessages, reviews, addReview, onCompleted]
+    [isLoading, user, login, authenticate, register, resetPassword, findAccountByPhone, findAccountByProvider, loginWithPhone, loginWithProvider, logout, updateProfile, listings, addListing, updateListing, claimListing, expireListings, completeListing, notifyDonor, conversations, conversationMessages, createConversation, sendConversationMessage, receiveConversationMessage, markConversationRead, checkForNewMessages, reviews, addReview, onCompleted]
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

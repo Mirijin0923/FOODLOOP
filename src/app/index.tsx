@@ -7,11 +7,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, Redirect, router, useLocalSearchParams } from 'expo-router';
 import { colors, spacing, radius, typography } from '@/constants/foodloop-theme';
 import { useAppState } from '@/context/app-state';
-import { authApi } from '@/services/auth-api';
 
 export default function LoginScreen() {
   const { auth } = useLocalSearchParams<{ auth?: string }>();
-  const { login } = useAppState();
+  const { authenticate } = useAppState();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -38,15 +37,13 @@ export default function LoginScreen() {
     if (hasError) return;
 
     setLoading(true);
-    // No backend yet — this simulates a network call, then logs the user
-    // into local app state (see src/context/app-state.tsx).
-    setTimeout(async () => {
+    setTimeout(() => {
       try {
-        const { user } = await authApi.login(email, password);
-        login(user.email ?? email.trim(), user.name);
+        if (!authenticate(email, password)) {
+          setPasswordError('Incorrect email or password.');
+          return;
+        }
         router.replace('/(tabs)');
-      } catch (error) {
-        setPasswordError(error instanceof Error ? error.message : 'Unable to log in. Please try again.');
       } finally {
         setLoading(false);
       }
